@@ -2,6 +2,8 @@
 
 Tomado del libro **Kafka In Action** de los autores **Dylan Scott, Viktor Gamov y Dave Klein**
 
+# [Pág. 3] Introducción a Kafka
+
 ## [Pág. 4] ¿Qué es Kafka?
 
 El sitio web de `Apache Kafka` define Kafka como  una plataforma de streaming distribuido. Tiene tres capacidades principales.
@@ -39,3 +41,29 @@ Otra discusión que siguió al lanzamiento de EOS fue un debate sobre si exactam
 Además de las diversas opciones de entrega, **otra ventaja habitual del gestor de mensajes es que, si la aplicación consumidora está inactiva por errores o mantenimiento, el productor no necesita esperar a que el consumidor gestione el mensaje. Cuando los consumidores vuelvan a estar en línea y procesen los datos, podrán continuar donde lo dejaron y no dejarán caer ningún mensaje.**
 
 ![exactamente una vez](./assets/03.exactamente-una-vez.png)
+
+---
+
+# [Pág. 17] Conociendo Kafka
+
+`Apache Kafka` **es en el fondo un sistema distribuido, pero también es posible instalarlo y ejecutarlo en un único host.** Eso nos da un punto de partida para sumergirnos en nuestros casos de uso de ejemplo. Como suele ser el caso, las preguntas reales comienzan a fluir una vez que las manos tocan el teclado. **Al final de este capítulo, serás capaz de enviar y recuperar tu primer mensaje Kafka desde la línea de comandos.** Empecemos con Kafka y luego dediquemos un poco más de tiempo a profundizar en los detalles arquitectónicos de Kafka.
+
+## [Pág. 18] Producir y consumir un mensaje
+
+Un mensaje `(message)`, también llamado registro `(record)`, es el dato básico que fluye a través de Kafka. **Los mensajes son la forma en que Kafka representa sus datos.** Cada mensaje tiene: 
+
+- Una marca de tiempo, 
+- Un valor y
+- Una clave opcional. 
+
+También se pueden utilizar encabezados personalizados si se desea. Un ejemplo simple de un mensaje podría ser algo como lo siguiente:
+
+> La máquina con ID de host "1234567" `(una clave de mensaje)` falló con el mensaje "Alerta: Falló la máquina" `(un valor de mensaje)` en "2020-10-02T10:34 :11.654Z” `(una marca de tiempo del mensaje)`. 
+
+El Capítulo 9 muestra un ejemplo del uso de un encabezado personalizado para establecer un par `clave-valor` para un caso de uso de seguimiento.
+
+La figura 2.1 muestra probablemente las partes más importantes y comunes de un mensaje con las que los usuarios tratan directamente. Cada `clave` y `valor` puede interactuar de formas específicas para serializar o deserializar sus datos.
+
+![mensaje de kafka](./assets/04.mensaje-de-kafka.png)
+
+Ahora que tenemos un registro `(record)`, **¿cómo se lo hacemos saber a Kafka?** Entregará este mensaje a Kafka enviándolo a los conocidos como intermediarios `(brokers)`.

@@ -323,3 +323,24 @@ Este es mi segundo evento
 Siéntase libre de experimentar: por ejemplo, vuelva a su terminal de productor (paso anterior) para escribir eventos adicionales y vea cómo los eventos aparecen inmediatamente en su terminal de consumidor.
 
 Debido a que los eventos se almacenan de forma duradera en Kafka, pueden ser leídos tantas veces y por tantos consumidores como desee. Puede verificar esto fácilmente abriendo otra sesión de terminal y volviendo a ejecutar el comando anterior.
+
+## [Pág. 23] Tour por Kafka
+
+**La siguiente tabla muestra los componentes principales y sus funciones dentro de la arquitectura Kafka.** En las siguientes secciones, profundizaremos más en cada uno de estos elementos para obtener una base sólida para los siguientes capítulos.
+
+| Component             | Role                                                                  |
+|-----------------------|-----------------------------------------------------------------------|
+| Producer              | Envía messages a Kafka                                                |
+| Consumer              | Recupera messages desde Kafka                                         |
+| Topics                | Nombre lógico de donde se almacenan los mensajes en el broker         |
+| ZooKeeper ensemble    | Ayuda a mantener el consenso en el cluster                            |
+| Broker                | Maneja el commit log (cómo se almacenan los mensajes en el disco)     |
+
+## [Pág. 23] Producers y consumers
+
+**Un `producer` es una herramienta para enviar mensajes a temas de Kafka.** Como mencionamos en nuestros casos de uso en el capítulo 1, un buen ejemplo es un archivo de log que se genera a partir de una aplicación. Esos archivos no forman parte del sistema Kafka hasta que se recopilan y envían a Kafka. Cuando piensas en entradas (o datos) que entran en Kafka, estás viendo a un poducer involucrado en algún lugar interno.
+
+**Un `consumer` es una herramienta para recuperar mensajes de Kafka.** En la misma línea que los productores, si hablamos de obtener datos de Kafka, consideramos que los consumidores participan directa o indirectamente. 
+Las aplicaciones consumidoras se suscriben a los `topics` que les interesan y solicitan datos continuamente. 
+
+![producers and consumers](./assets/09.producers-consumers.png)

@@ -371,3 +371,12 @@ Como ya vio, nuestro clúster para Kafka incluye más de un broker (servidor). P
 Una cosa a tener en cuenta para cualquier caso de uso de producción es que `ZooKeeper` será un conjunto, pero ejecutaremos solo un servidor en nuestra configuración local. La Figura 2.7 muestra el clúster `ZooKeeper` y cómo es la interacción de Kafka con los `brokers` y no con los clientes. KIP-500 se refiere a este uso como el diseño de clúster "actual".
 
 ![zookeeper interaction](./assets/11.zookeeper-interaction.png)
+
+## [Pág. 28] La arquitectura de Kafka a alto nivel
+
+En general, se puede considerar el núcleo de Kafka como procesos de aplicación Scala que se ejecutan en una máquina virtual Java (JVM). Aunque destaca por ser capaz de manejar millones de mensajes rápidamente, **¿qué tiene el diseño de Kafka que lo hace posible?** Una de las claves de Kafka es el uso de la caché de páginas del sistema operativo *(como se muestra en la figura 2.8).* Al evitar el almacenamiento en caché en la pila de JVM, los brokers pueden ayudar a prevenir algunos de los problemas que pueden tener las pilas grandes (por ejemplo, pausas largas o frecuentes en la recolección de basura) [6].
+
+![system operating](./assets/12.operating-system-page-cache.png)
+
+Kafka utiliza su propio protocolo. Los creadores de Kafka señalaron que el uso de un protocolo existente como **AMQP (Advanced Message Queuing Protocol - Protocolo avanzado de cola de mensajes)** tenía un papel demasiado importante en los impactos en la implementación real. Por ejemplo, se agregaron nuevos campos al encabezado del mensaje para implementar la semántica **exactamente una vez** de la versión 0.11. Además, esa misma versión modificó el formato de los mensajes para comprimirlos de manera más efectiva. 
+

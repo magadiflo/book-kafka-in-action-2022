@@ -360,3 +360,14 @@ Uno de los conceptos más importantes que debemos comprender en este punto es la
 
 `Los productores y consumidores` **solo leen o escriben desde la `réplica líder` de cada partición a la que está asignada durante escenarios donde no hay excepciones ni fallas (también conocido como escenario de "camino feliz").** Pero, *¿cómo sabe su productor o consumidor qué réplica de partición es la líder?* En el caso de computación distribuida y fallas aleatorias, esa respuesta a menudo se ve influenciada por la ayuda de `ZooKeeper`, la siguiente parada de nuestro recorrido.
 
+## [Pág. 27] Uso de ZooKeeper
+
+Una de las fuentes más antiguas de la temida complejidad adicional en el ecosistema Kafka podría ser que utiliza ZooKeeper. `Apache ZooKeeper` **es una tienda distribuida que proporciona servicios de descubrimiento, configuración y sincronización de forma altamente disponible.**
+
+En las versiones de Kafka desde la 0.9, se realizaron cambios en ZooKeeper que permitieron que un consumidor tuviera la opción de no almacenar información sobre hasta qué punto había consumido mensajes (llamados compensaciones). Cubriremos la importancia de las compensaciones en capítulos posteriores. Sin embargo, este uso reducido no eliminó la necesidad de consenso y coordinación en los sistemas distribuidos.
+
+Como ya vio, nuestro clúster para Kafka incluye más de un broker (servidor). Para actuar como una aplicación correcta, estos brokers no sólo deben comunicarse entre sí, sino que también deben llegar a un acuerdo. Acordar cuál es la réplica líder de una partición es un ejemplo de la aplicación práctica de ZooKeeper dentro del ecosistema Kafka.
+
+Una cosa a tener en cuenta para cualquier caso de uso de producción es que `ZooKeeper` será un conjunto, pero ejecutaremos solo un servidor en nuestra configuración local. La Figura 2.7 muestra el clúster `ZooKeeper` y cómo es la interacción de Kafka con los `brokers` y no con los clientes. KIP-500 se refiere a este uso como el diseño de clúster "actual".
+
+![zookeeper interaction](./assets/11.zookeeper-interaction.png)

@@ -370,13 +370,14 @@ Como ya vio, nuestro clúster para Kafka incluye más de un broker (servidor). P
 
 Una cosa a tener en cuenta para cualquier caso de uso de producción es que `ZooKeeper` será un conjunto, pero ejecutaremos solo un servidor en nuestra configuración local. La Figura 2.7 muestra el clúster `ZooKeeper` y cómo es la interacción de Kafka con los `brokers` y no con los clientes. KIP-500 se refiere a este uso como el diseño de clúster "actual".
 
-![zookeeper interaction](./assets/11.zookeeper-interaction.png)
+![zookeeper interaction](./assets/11.zookeeper-interaction.png) 
 
-## [Pág. 28] La arquitectura de Kafka a alto nivel
+## [Pág. 29] El commit log (registro de confirmación)
 
-En general, se puede considerar el núcleo de Kafka como procesos de aplicación Scala que se ejecutan en una máquina virtual Java (JVM). Aunque destaca por ser capaz de manejar millones de mensajes rápidamente, **¿qué tiene el diseño de Kafka que lo hace posible?** Una de las claves de Kafka es el uso de la caché de páginas del sistema operativo *(como se muestra en la figura 2.8).* Al evitar el almacenamiento en caché en la pila de JVM, los brokers pueden ayudar a prevenir algunos de los problemas que pueden tener las pilas grandes (por ejemplo, pausas largas o frecuentes en la recolección de basura) [6].
+Uno de los conceptos centrales que le ayudarán a dominar los fundamentos de Kafka es comprender el `commit log`. El concepto es simple pero poderoso. Esto se vuelve más claro a medida que comprende la importancia de esta elección de diseño. Para aclarar, el registro del que estamos hablando no es el mismo que el caso de uso de registro que implicaba agregar la salida de los `loggers` de un proceso de aplicación, como los mensajes `LOGGER.error` en Java.
 
-![system operating](./assets/12.operating-system-page-cache.png)
+La Figura 2.9 muestra cuán simple puede ser el concepto de un `commit log` a medida que se agregan mensajes con el tiempo. **Lo que hace que el `commit log` sea especial es su naturaleza de solo agregar, en la que los eventos siempre se agregan al final.** La persistencia como registro propio para el almacenamiento es una parte importante de lo que separa a Kafka de otros brokers de mensajes. **Leer un mensaje no lo elimina del sistema ni lo excluye de otros consumidores.**
 
-Kafka utiliza su propio protocolo. Los creadores de Kafka señalaron que el uso de un protocolo existente como **AMQP (Advanced Message Queuing Protocol - Protocolo avanzado de cola de mensajes)** tenía un papel demasiado importante en los impactos en la implementación real. Por ejemplo, se agregaron nuevos campos al encabezado del mensaje para implementar la semántica **exactamente una vez** de la versión 0.11. Además, esa misma versión modificó el formato de los mensajes para comprimirlos de manera más efectiva. 
+![commit log](./assets/12.commit-log.png)
 
+**¿Cuánto tiempo puedo conservar los datos en Kafka?** Hoy en día, en varias empresas, no es raro ver que después de que los datos en los registros de confirmación de Kafka alcanzan un tamaño configurable o un período de retención de tiempo, los datos a menudo se mueven a un almacén permanente. Sin embargo, esto depende de cuánto espacio en disco necesita y de su flujo de trabajo de procesamiento. El New York Times tiene una única partición con capacidad para menos de 100 GB. Kafka está diseñado para mantener su rendimiento rápido incluso mientras conserva sus mensajes. Los detalles de retención se cubrirán cuando hablemos de intermediarios en el capítulo 6. Por ahora, comprenda que **la retención de datos de registro se puede controlar por antigüedad o tamaño mediante propiedades de configuración.**

@@ -381,3 +381,109 @@ La Figura 2.9 muestra cuán simple puede ser el concepto de un `commit log` a me
 ![commit log](./assets/12.commit-log.png)
 
 **¿Cuánto tiempo puedo conservar los datos en Kafka?** Hoy en día, en varias empresas, no es raro ver que después de que los datos en los registros de confirmación de Kafka alcanzan un tamaño configurable o un período de retención de tiempo, los datos a menudo se mueven a un almacén permanente. Sin embargo, esto depende de cuánto espacio en disco necesita y de su flujo de trabajo de procesamiento. El New York Times tiene una única partición con capacidad para menos de 100 GB. Kafka está diseñado para mantener su rendimiento rápido incluso mientras conserva sus mensajes. Los detalles de retención se cubrirán cuando hablemos de intermediarios en el capítulo 6. Por ahora, comprenda que **la retención de datos de registro se puede controlar por antigüedad o tamaño mediante propiedades de configuración.**
+
+## [Pág. 33] Clientes confluent
+
+Para nuestros ejercicios y ejemplos, utilizaremos los `clientes Java` creados por el propio proyecto principal de `Kafka`.
+
+Debido a que **usar un cliente es la forma más probable de interactuar con `Kafka` en sus aplicaciones**, veamos el uso del `cliente Java` (listado 2.9). Haremos el mismo proceso de `produce-and-consume` que hicimos anteriormente cuando usamos la línea de comando. 
+
+### Creando Java Client Producer
+
+Para crear nuestro `Java Client Producer`, crearemos un directorio llamado `/project` dentro de este mismo proyecto y utilizando nuestro ide de `IntelliJ IDEA` crearemos un proyecto de maven llamado `01.client-producer`.
+
+Una vez creado el proyecto debemos agregar las siguientes dependencias al `pom.xml` para que nuestro proyecto sea un cliente de kafka:
+
+```xml
+<properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka-clients</artifactId>
+        <version>3.7.0</version>
+    </dependency>
+
+    <!--Para poder ver el log de apache kafka-->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.13</version>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>2.0.13</version>
+    </dependency>
+</dependencies>
+```
+
+En la clase principal `Main` escribiremos el siguiente código:
+
+```java
+// listado 2.9. Java Client Producer
+//
+package dev.magadiflo.app;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+
+import java.util.Properties;
+
+public class Main {
+    public static void main(String[] args) {
+        Properties kaProperties = new Properties();     //(1)
+        kaProperties.put("bootstrap.servers", "localhost:9092"); //(2)
+        kaProperties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer"); //(3)
+        kaProperties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer"); //(4)
+
+        try (Producer<String, String> producer = new KafkaProducer<>(kaProperties)) { //(5)
+            String topic = "kinaction-helloworld";
+            String key = null;
+            String value = "Martin: Enviando mensaje desde java";
+            ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, key, value); //(6)
+            producer.send(producerRecord); //(7)
+        }
+    }
+}
+```
+
+**DONDE**
+- `(1)`. El productor toma un mapa de elementos de `nombre-valor` para configurar sus diversas opciones.
+- `(2)`. Esta propiedad puede tener una lista de brokers de Kafka. En mi caso, solo tengo 1.
+- `(3)` y `(4)`. Le dice al key y al value del mensaje qué formato serializar. 
+- `(5)`. Crea una instancia de productor. Los productores implementan la interfaz `Closeable` que se puede cerrar automáticamente mediante el tiempo de ejecución de Java.
+- `(6)`. Representa nuestro mensaje.
+- `(7)`. Envía el mensaje al broker de Kafka.
+
+El código del `listado 2.9` es un productor simple. El primer paso para crear un productor implica configurar las `propiedades de configuración`. Las propiedades están configuradas de manera que cualquiera que haya usado un mapa se sienta cómodo usándolo.
+
+El parámetro `bootstrap.servers` es un elemento de configuración esencial y su propósito puede no ser evidente a primera vista. Esta es una lista de sus brokers de Kafka. Sin embargo, la lista no tiene que incluir todos los servidores que tenga, porque después de que el cliente se conecte, encontrará la información sobre el resto de los brokers del clúster y no dependerá de esa lista. 
+
+Los parámetros `key.serializer` y `value.serializer` también son algo a tener en cuenta en el desarrollo. Necesitamos proporcionar una clase que serialice los datos a medida que pasan a Kafka. No es necesario que las claves y los valores utilicen el mismo serializador.
+
+La Figura 2.12 muestra el `flujo que ocurre cuando un productor envía un mensaje`. El `productor` que creamos toma las propiedades de configuración que utilizamos como argumento en el constructor. Con este productor ahora podemos enviar mensajes. `ProducerRecord` contiene la entrada real que queremos enviar. En nuestros ejemplos, `kinaction-helloworld` es el nombre del tema que enviamos. Los siguientes campos son la `clave` del mensaje seguida del `valor` del mensaje. Analizaremos más las claves en el capítulo 4, pero basta con saber que, de hecho, **pueden ser un valor nulo**, lo que hace que nuestro ejemplo actual sea menos complicado.
+
+![flujo producer](./assets/13.flujo-producer.png)
+
+### Ejecutando java client producer con consumer por consola
+
+Antes de ejecutar el proyecto anterior, levantaremos en consola un consumidor que viene por defecto en los archivos de intalación de kafka. Esto nos permitirá ver el mensaje que enviemos desde nuestra aplicación de java.
+
+Ahora sí, en mi caso he ejecutado varias veces, con distintos mensajes, la aplicación de java anteriormente creada y como resultado estamos observando los mensajes que el consumidor está recibiendo.
+
+```bash
+C:\kafka_2.13-3.7.0
+$ .\bin\windows\kafka-console-consumer.bat --topic kinaction-helloworld --bootstrap-server localhost:9092
+Hola desde app java
+Hola, mi segundo mensaje desde app java
+┬íEnviando mi tercer mensaje desde java!
+Enviando mensaje desde java
+Martin: Enviando mensaje desde java
+```
+

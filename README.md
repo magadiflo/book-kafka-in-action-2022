@@ -556,3 +556,11 @@ Finalmente, podemos presionar Ctrl-C en el programa consumidor cuando recuperemo
 Observamos en la imagen que tenemos dos consumidores: consola y aplicación java, ambos consumidores están ejecutándose y esperando a que un productor envíe algún mensaje. Cuando el producto envía el mensaje, ambos consumidores que están subscritos al mismo `topic` reciben el mensaje.
 
 ![java client consumer](./assets/14.java-client-consumer.png)
+
+## [Pág. 36] Procesamiento de flujo y terminología
+
+**Veremos cómo funciona Kafka.** Cuando empiece a pensar en aplicar Kafka a su trabajo, se le presentarán los siguientes términos y, con suerte, podrá utilizar las siguientes descripciones como una lente a través de la cual ver su mentalidad de procesamiento.
+
+![kafka overview](./assets/15.kafka-overview.png)
+
+**La `figura 2.13` proporciona una visión de alto nivel de lo que hace Kafka.** `Kafka` tiene muchas partes móviles que dependen de los datos que entran y salen de su núcleo para brindar valor a sus usuarios. Los `producers` envían datos a Kafka, que funciona como un sistema distribuido para mayor confiabilidad y escala, con registros, que son la base para el almacenamiento. Una vez que los datos están dentro del ecosistema de Kafka, los `consumers` pueden ayudar a los usuarios a utilizar esos datos en sus otras aplicaciones y casos de uso. Nuestros `brokers` forman el clúster y se coordinan con un clúster de `ZooKeeper` para mantener los metadatos. Debido a que **Kafka almacena datos en el disco**, la capacidad de reproducir datos en caso de una falla de la aplicación también es parte del conjunto de funciones de Kafka. Estos atributos permiten a Kafka convertirse en la base de potentes aplicaciones de procesamiento de flujo.

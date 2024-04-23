@@ -344,3 +344,19 @@ Debido a que los eventos se almacenan de forma duradera en Kafka, pueden ser le�
 Las aplicaciones consumidoras se suscriben a los `topics` que les interesan y solicitan datos continuamente. 
 
 ![producers and consumers](./assets/09.producers-consumers.png)
+
+## [Pág. 26] Descripción general de los Topics
+
+Los `topics` son donde la mayoría de los usuarios empiezan a pensar en la lógica de qué mensajes deben ir y dónde. Los `topics` constan de unidades llamadas `particiones`. **En otras palabras, una o más `particiones` pueden formar un solo `topic`.** En cuanto a lo que realmente se implementa en el disco de la computadora, las `particiones` son con lo que Kafka trabaja en su mayor parte.
+
+**NOTA:**
+> Una réplica de partición individual solo existe en un solo broker y no puede dividirse entre brokers.
+
+La Figura 2.6 muestra cómo cada líder de réplica de partición existe en un único broker de Kafka y no puede dividirse en partes más pequeñas que esa unidad. Piensa en nuestro primer ejemplo, el `topic` `kinaction_helloworld`. Si estás buscando confiabilidad y quieres tres copias de los datos, el `topic` en sí no es una sola entidad (o un solo archivo) que se copia; en cambio, son las diferentes particiones las que se replican tres veces cada una.
+
+![partitinos make up topics](./assets/10.partitions-make-up-topics.png)
+
+Uno de los conceptos más importantes que debemos comprender en este punto es la idea de que una de las copias de la partición (réplicas) será lo que se conoce como `líder`. *Por ejemplo, si tiene un tema compuesto por tres particiones y un total de tres copias de cada partición, cada partición tendrá una réplica líder elegida. Ese líder será una de las copias de la partición, y los otros dos (en este caso, no mostrados en la figura 2.6) serán seguidores, que actualizan su información desde su réplica líder de partición.*
+
+`Los productores y consumidores` **solo leen o escriben desde la `réplica líder` de cada partición a la que está asignada durante escenarios donde no hay excepciones ni fallas (también conocido como escenario de "camino feliz").** Pero, *¿cómo sabe su productor o consumidor qué réplica de partición es la líder?* En el caso de computación distribuida y fallas aleatorias, esa respuesta a menudo se ve influenciada por la ayuda de `ZooKeeper`, la siguiente parada de nuestro recorrido.
+

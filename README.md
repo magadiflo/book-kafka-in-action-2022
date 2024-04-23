@@ -487,3 +487,72 @@ Enviando mensaje desde java
 Martin: Enviando mensaje desde java
 ```
 
+### Creando Java Client Consumer
+
+En el apartado anterior, usamos el consumidor por consola que viene en las instalaciones de kafka para poder ver el mensaje que la aplicación `java client producer` enviaba. En este apartado crearemos nuestro propio `java client consumer`. Para eso, crearemos en el directorio llamado `/project` dentro de este mismo proyecto un proyecto llamado `02.client-consumer`.
+
+Aquí ya no mostramos las dependencias del archivo `pom.xml`, dado que este proyecto contiene las mismas dependencias que nuestra aplicación `java client producer`.
+
+```java
+// listado 2.11. Java Client Consumer
+//
+package dev.magadiflo.app;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Properties;
+
+public class Main {
+
+    private final Logger LOG = LoggerFactory.getLogger(Main.class);
+    private volatile boolean keepConsuming = true;
+
+    public static void main(String[] args) {
+        Properties kaProperties = new Properties();
+        kaProperties.put("bootstrap.servers", "localhost:9092");
+        kaProperties.put("group.id", "kinaction-helloworld");
+        kaProperties.put("enable.auto.commit", "true");
+        kaProperties.put("auto.commit.interval.ms", "1000");
+        kaProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        kaProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        Main main = new Main();
+        main.consume(kaProperties);
+        Runtime.getRuntime().addShutdownHook(new Thread(main::shutdown));
+    }
+
+    public void consume(Properties kaProperties) {
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(kaProperties)) {
+            consumer.subscribe(List.of("kinaction-helloworld")); //El consumidor le dice a Kafka qué temas le interesan.
+            while (this.keepConsuming) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(250));//Encuestas para mensajes nuevos a medida que llegan
+                for (ConsumerRecord<String, String> record : records) {
+                    LOG.info("kinaction-info offset: {}, kinaction-value: {}", record.offset(), record.value());
+                }
+            }
+        }
+    }
+
+    private void shutdown() {
+        this.keepConsuming = false;
+    }
+}
+```
+
+Una cosa que llama la atención es que tenemos un bucle infinito en el `listado 2.11`. Parece extraño hacerlo a propósito, pero queremos manejar un flujo infinito de datos. El `consumer` es similar al productor en cuanto a tomar un mapa de propiedades para crear un consumidor. Sin embargo, a diferencia del productor, el `cliente consumidor Java` **no es seguro para subprocesos (not thread safe)**. Tendremos que tener esto en cuenta a medida que superemos un consumidor en secciones posteriores. Nuestro código es responsable de garantizar que cualquier acceso esté sincronizado: una opción simple es tener solo un consumidor por subproceso Java. Además, **mientras le dijimos al productor dónde enviar el mensaje, ahora hacemos que el consumidor se suscriba a los topics que desee.** Un comando de suscripción puede suscribirse a más de un tema a la vez.
+
+Una de las secciones más importantes a destacar en el listado 2.11 es la **encuesta al consumidor**. Esto es lo que intenta activamente traer mensajes a nuestra aplicación. Ningún mensaje, uno o muchos mensajes pueden regresar con una sola encuesta, por lo que es importante tener en cuenta que nuestra lógica debe tener en cuenta más de un resultado con cada llamada de encuesta.
+
+Finalmente, podemos presionar Ctrl-C en el programa consumidor cuando recuperemos los mensajes de prueba y listo por ahora. Como nota, estos ejemplos se basan en muchas propiedades de configuración que están habilitadas de forma predeterminada. Tendremos la oportunidad de profundizar más en ellos en capítulos posteriores.
+
+### Recibiendo mensajes en consumidores: consola y java
+
+Observamos en la imagen que tenemos dos consumidores: consola y aplicación java, ambos consumidores están ejecutándose y esperando a que un productor envíe algún mensaje. Cuando el producto envía el mensaje, ambos consumidores que están subscritos al mismo `topic` reciben el mensaje.
+
+![java client consumer](./assets/14.java-client-consumer.png)

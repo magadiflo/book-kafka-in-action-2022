@@ -72,3 +72,31 @@ C:\kafka_2.13-3.7.0
 $ .\bin\windows\kafka-console-consumer.bat --topic kinaction-alert-connect --from-beginning --bootstrap-server localhost:9092
 {"schema":{"type":"string","optional":false},"payload":"escribiendo desde notepad"}
 ```
+
+# [Pág. 66] Producer: Datos de abastecimiento
+
+## Opciones de productor
+
+El productor trabaja solo desde la configuración para recuperar gran parte de la información que necesita, como una lista de todos nuestros `brokers Kafka`. Utilizando el valor de la propiedad `bootstrap.servers` como punto de partida, el productor obtiene metadatos sobre `brokers` y `particiones` que utiliza para todas las escrituras posteriores.
+
+Kafka le permite cambiar comportamientos clave simplemente cambiando algunos valores de configuración. Una forma de lidiar con todos los nombres de las claves de configuración del productor es usar las constantes proporcionadas en la clase Java `ProducerConfig` al desarrollar el código del productor y buscar la etiqueta de Importancia de "high" en el sitio web de Confluent. Sin embargo, en nuestros ejemplos, usaremos los nombres de las propiedades para mayor claridad.
+
+La `Tabla 4.1` enumera algunas de las configuraciones de productores más importantes que respaldan nuestros ejemplos específicos.
+
+| Key                   | Purpose                                                                                               |
+|-----------------------|-------------------------------------------------------------------------------------------------------|
+| aks                   | Número de réplicas de acuses de recibo que requiere un productor antes de establecer el éxito.        |
+| bootstrap.servers     | Uno o más brokers de Kafka para conectarse para iniciar.                                              |
+| value.serializer      | La clase que se utiliza para la serialización del valor.                                              |
+| key.serializer        | La clase que se utiliza para la serialización de la clave.                                            |
+
+
+## Configurar la lista de brokers
+
+De nuestros ejemplos de cómo escribir mensajes a Kafka, queda claro que tenemos que decirle al productor a qué tema enviar mensajes. Recuerde que **los temas se componen de particiones**, pero **¿cómo sabe Kafka dónde reside una partición de tema?** Sin embargo, no es necesario que conozcamos los detalles de esas particiones cuando enviamos mensajes. Quizás un ejemplo ayude a aclarar este enigma. Una de las opciones de configuración requeridas para los productores es bootstrap.servers. `La Figura 4.4` muestra un ejemplo de un productor que solo tiene el `broker 0` en su lista de servidores de arranque, pero podrá conocer los tres `brokers` del clúster comenzando solo con uno.
+
+La propiedad `bootstrap.servers` puede aceptar varios brokers iniciales o sólo uno, como se muestra en la figura 4.4. Al conectarse a este corredor, el cliente puede descubrir los metadatos que necesita, que también incluyen datos sobre otros corredores en el clúster.
+
+![bootstrap server](./assets/16.bootstrap-servers.png)
+
+Esta configuración es clave para ayudar al productor a encontrar un corredor con quien hablar. Una vez que el productor está conectado al clúster, puede obtener los metadatos que necesita para obtener los detalles (como dónde reside la réplica líder de la partición en el disco) que no proporcionamos anteriormente. Los clientes productores también pueden superar una falla del líder de partición en el que escriben utilizando la información sobre el clúster para encontrar un nuevo líder. Es posible que hayas notado que la información de ZooKeeper no forma parte de la configuración. Cualquier metadato que el productor necesite se manejará sin que el cliente productor tenga que proporcionar detalles del clúster ZooKeeper.

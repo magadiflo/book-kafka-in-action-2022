@@ -83,6 +83,7 @@ Kafka le permite cambiar comportamientos clave simplemente cambiando algunos val
 
 La `Tabla 4.1` enumera algunas de las configuraciones de productores más importantes que respaldan nuestros ejemplos específicos.
 
+`Table 4.1 Important producer configurations`
 | Key                   | Purpose                                                                                               |
 |-----------------------|-------------------------------------------------------------------------------------------------------|
 | aks                   | Número de réplicas de acuses de recibo que requiere un productor antes de establecer el éxito.        |
@@ -100,3 +101,49 @@ La propiedad `bootstrap.servers` puede aceptar varios brokers iniciales o sólo 
 ![bootstrap server](./assets/16.bootstrap-servers.png)
 
 Esta configuración es clave para ayudar al productor a encontrar un corredor con quien hablar. Una vez que el productor está conectado al clúster, puede obtener los metadatos que necesita para obtener los detalles (como dónde reside la réplica líder de la partición en el disco) que no proporcionamos anteriormente. Los clientes productores también pueden superar una falla del líder de partición en el que escriben utilizando la información sobre el clúster para encontrar un nuevo líder. Es posible que hayas notado que la información de ZooKeeper no forma parte de la configuración. Cualquier metadato que el productor necesite se manejará sin que el cliente productor tenga que proporcionar detalles del clúster ZooKeeper.
+
+# [Pág. 87] Consumers: Desbloqueo de datos
+
+## Opciones de consumidor
+
+Siempre necesitamos conocer los brokers a los que podemos intentar conectarnos al iniciar el cliente. Un pequeño problema es asegurarse de utilizar los deserializadores para las claves y valores que coincidan con los serializadores con los que produjo el mensaje. *Por ejemplo, si produce usando `StringSerializer` pero intenta consumir usando `LongDeSerializer`, obtendrá una excepción que deberá corregir.*
+
+La `Tabla 5.1` enumera algunos de los valores de configuración que debemos conocer cuando comenzamos a escribir nuestros propios consumidores.
+
+`Table 5.1 Consumer configuration`
+| Key                   | Purpose                                                                            |
+|-----------------------|------------------------------------------------------------------------------------|
+| bootstrap.servers     | Uno o más brokers de Kafka para conectarse para iniciar.                           |
+| value.deserializer    | Necesario para la deserialización del valor.                                       |
+| key.deserializer      | Necesario para la deserialización de la clave.                                     |
+| group.id              | Un nombre que se utiliza para unirse a un grupo de consumidores.                   |
+| client.id             | Una identificación para identificar a un usuario (la usaremos en el capítulo 10).  |
+| heartbeat.interval.ms | Intervalo para los pings del consumidor al coordinador del grupo                   |
+
+Una forma de lidiar con todos los nombres de las claves de configuración del consumidor es usar las constantes proporcionadas en la clase Java `ConsumerConfig` y buscar la etiqueta de Importancia `"high"` en el sitio web de Confluent. Sin embargo, en nuestros ejemplos, usaremos los nombres de las propiedades para mayor claridad. El `listado 5.1` muestra cuatro de estas claves en acción. **Los valores para las configuraciones en la tabla 5.1 determinan cómo nuestro consumidor interactúa con los brokers y con otros consumidores.**
+
+## Cómo interactúan los consumidores
+
+**¿Por qué es primordial el concepto de grupos de consumidores?** Probablemente la razón más importante es que el escalamiento se ve afectado por la adición o eliminación de clientes de un grupo. Los consumidores que no forman parte del mismo grupo no comparten la misma coordinación de conocimientos sobre compensación.
+
+El `Listado 5.3 `muestra un ejemplo de un grupo llamado `kinaction_team0group`. Si, en cambio, crea un nuevo `group.id` (como un GUID aleatorio), iniciará un nuevo consumidor sin compensaciones almacenadas y sin otros consumidores en su grupo. Si se une a un grupo existente (o uno que ya tenía compensaciones almacenadas), su consumidor puede compartir el trabajo con otros o incluso puede continuar donde dejó la lectura de ejecuciones anteriores.
+
+![consumer group](./assets/17.consumer-group.png)
+
+A menudo ocurre que muchos consumidores leen sobre el mismo topic. Un detalle importante para decidir si necesita una nueva ID de grupo es si sus consumidores están trabajando como parte de una aplicación o como flujos lógicos separados.
+
+Se considerará que **cada consumidor que utiliza el mismo `group.id` que otro consumidor está trabajando en conjunto** para consumir las particiones y los offsets del topic como una aplicación lógica.
+
+## Coordinadores de grupo
+
+**Como regla general, sólo un consumidor por grupo de consumidores puede leer una partición.** En otras palabras, mientras que muchos consumidores pueden leer una partición, **solo puede leerla un consumidor de cada grupo a la vez.**
+
+## Estrategia de asignación de particiones
+
+Un elemento que debemos tener en cuenta es cómo se asignan los consumidores a las particiones. Esto es importante porque le ayudará a determinar cuántas particiones podría estar sujeto a impuestos por el procesamiento de cada uno de sus consumidores. La propiedad `partición.assignment.strategy` es la que determina qué particiones se asignan a cada consumidor. Se proporcionan `Range` y `RoundRobin`, al igual que `Sticky` y `CooperativeSticky`.
+
+El asignador de `rango` utiliza un solo topic para encontrar el número de particiones (ordenadas por número) y luego lo desglosa por el número de consumidores. Si la división no es uniforme, entonces los primeros consumidores (usando el orden alfabético) obtienen las particiones restantes. Asegúrese de emplear una variedad de particiones que sus consumidores puedan manejar y considere cambiar la estrategia de asignación si algunos clientes consumidores usan todos sus recursos, aunque otros están bien. La `Figura 5.9` muestra cómo tres clientes tomarán tres de siete particiones en total y terminarán con más particiones que el último cliente.
+
+La estrategia de operación por turnos `(round-robin)` es donde las particiones se distribuyen uniformemente en la fila de consumidores. La `Figura 5.9` muestra un ejemplo de tres clientes que forman parte del mismo grupo de consumidores y **se asignan en forma circular** para un tema compuesto por siete particiones. El primer consumidor obtiene la primera partición, el segundo consumidor la segunda, y así sucesivamente hasta que se agoten las particiones.
+
+![asignacion particiones](./assets/18.asignacion-particiones.png)
